@@ -77,13 +77,14 @@ class LicenseWebController extends Controller
     public function show(MikposLicense $license): View
     {
         $license->load(['client', 'features']);
+        $billingCycles = BillingCycle::cases();
 
         $resellerSummary = null;
         if ($license->client->is_reseller) {
             $resellerSummary = $this->resellerService->getResellerSummary($license->client);
         }
 
-        return view('licenses.show', compact('license', 'resellerSummary'));
+        return view('licenses.show', compact('license', 'resellerSummary', 'billingCycles'));
     }
 
     public function edit(MikposLicense $license): View

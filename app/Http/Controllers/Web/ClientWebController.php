@@ -58,7 +58,9 @@ class ClientWebController extends Controller
             'payments'       => fn ($q) => $q->orderByDesc('paid_at'),
         ]);
 
-        return view('clients.show', compact('client'));
+        $clientTypes = ClientType::cases();
+
+        return view('clients.show', compact('client', 'clientTypes'));
     }
 
     public function statement(Client $client): View

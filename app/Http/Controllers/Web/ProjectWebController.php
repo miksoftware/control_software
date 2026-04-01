@@ -60,8 +60,9 @@ class ProjectWebController extends Controller
     public function show(CustomProject $project): View
     {
         $project->load(['client', 'payments']);
+        $statuses = ProjectStatus::cases();
 
-        return view('projects.show', compact('project'));
+        return view('projects.show', compact('project', 'statuses'));
     }
 
     public function edit(CustomProject $project): View

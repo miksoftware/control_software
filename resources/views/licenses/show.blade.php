@@ -12,7 +12,7 @@
                 @endif
             </div>
             <div class="flex items-center space-x-2">
-                <a href="{{ route('licenses.edit', $license) }}" class="px-4 py-2 bg-gray-800 text-white text-sm font-medium rounded-lg hover:bg-gray-700 transition-colors">Editar</a>
+                <button onclick="document.getElementById('editLicenseModal').classList.remove('hidden')" class="px-4 py-2 bg-gray-800 text-white text-sm font-medium rounded-lg hover:bg-gray-700 transition-colors">Editar</button>
             </div>
         </div>
     </x-slot>
@@ -99,4 +99,70 @@
             @endforelse
         </div>
     </div>
+
+    <!-- Modal: Editar Licencia -->
+    <div id="editLicenseModal" class="hidden fixed inset-0 z-50 overflow-y-auto" aria-modal="true">
+        <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
+            <div class="fixed inset-0 bg-gray-500/75 transition-opacity" onclick="document.getElementById('editLicenseModal').classList.add('hidden')"></div>
+            <div class="relative bg-white rounded-2xl shadow-xl transform transition-all sm:max-w-lg sm:w-full mx-auto">
+                <form method="POST" action="{{ route('licenses.update', $license) }}">
+                    @csrf
+                    @method('PUT')
+                    <div class="px-8 py-6 border-b border-gray-100">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h3 class="text-xl font-bold text-gray-900">Editar Licencia</h3>
+                                <p class="text-sm text-gray-500 mt-1">{{ $license->client->name }} &mdash; {{ $license->license_key }}</p>
+                            </div>
+                            <button type="button" onclick="document.getElementById('editLicenseModal').classList.add('hidden')" class="text-gray-400 hover:text-gray-600">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="px-8 py-6 space-y-5">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">URL del Sitio Web</label>
+                            <input type="url" name="site_url" value="{{ old('site_url', $license->site_url) }}" placeholder="https://ejemplo.com" class="w-full rounded-xl border-gray-300 bg-gray-50 focus:border-accent focus:ring-accent sm:text-sm">
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Estado</label>
+                                <select name="status" required class="w-full rounded-xl border-gray-300 bg-gray-50 focus:border-accent focus:ring-accent sm:text-sm">
+                                    @foreach(\App\Enums\LicenseStatus::cases() as $status)
+                                        <option value="{{ $status->value }}" {{ $license->status->value === $status->value ? 'selected' : '' }}>{{ $status->label() }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Ciclo de Facturación</label>
+                                <select name="billing_cycle" required class="w-full rounded-xl border-gray-300 bg-gray-50 focus:border-accent focus:ring-accent sm:text-sm">
+                                    @foreach($billingCycles as $cycle)
+                                        <option value="{{ $cycle->value }}" {{ ($license->billing_cycle->value ?? $license->billing_cycle) === $cycle->value ? 'selected' : '' }}>{{ $cycle->label() }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Tarifa Mensual ($)</label>
+                                <input type="number" step="0.01" name="monthly_rate" value="{{ old('monthly_rate', $license->monthly_rate) }}" required class="w-full rounded-xl border-gray-300 bg-gray-50 focus:border-accent focus:ring-accent sm:text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Próxima Facturación</label>
+                                <input type="date" name="next_billing_at" value="{{ old('next_billing_at', $license->next_billing_at?->format('Y-m-d')) }}" class="w-full rounded-xl border-gray-300 bg-gray-50 focus:border-accent focus:ring-accent sm:text-sm">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="px-8 py-4 bg-gray-50 border-t border-gray-100 flex items-center justify-end space-x-3 rounded-b-2xl">
+                        <button type="button" onclick="document.getElementById('editLicenseModal').classList.add('hidden')" class="px-4 py-2 text-sm font-bold text-gray-500 hover:text-gray-700">Cancelar</button>
+                        <button type="submit" class="px-6 py-2 bg-accent text-white text-sm font-bold rounded-xl hover:bg-accent/90 transition-colors shadow-sm shadow-accent/20">Guardar Cambios</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    @if($errors->any())
+    <script>document.addEventListener('DOMContentLoaded', () => document.getElementById('editLicenseModal').classList.remove('hidden'));</script>
+    @endif
 </x-app-layout>

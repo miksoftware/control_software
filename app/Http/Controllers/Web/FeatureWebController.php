@@ -59,8 +59,9 @@ class FeatureWebController extends Controller
     public function show(MikposFeature $feature): View
     {
         $feature->load(['client', 'mikposLicense']);
+        $statuses = ProjectStatus::cases();
 
-        return view('features.show', compact('feature'));
+        return view('features.show', compact('feature', 'statuses'));
     }
 
     public function edit(MikposFeature $feature): View
