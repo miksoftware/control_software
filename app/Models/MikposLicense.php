@@ -27,6 +27,7 @@ class MikposLicense extends Model
     protected $fillable = [
         'client_id',
         'license_key',
+        'site_url',
         'billing_cycle',
         'monthly_rate',
         'installation_fee',

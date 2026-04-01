@@ -23,6 +23,7 @@ class StoreMikposLicenseRequest extends FormRequest
     {
         return [
             'client_id'        => ['required', 'integer', 'exists:clients,id'],
+            'site_url'         => ['nullable', 'url', 'max:500'],
             'billing_cycle'    => ['required', Rule::enum(BillingCycle::class)],
             'monthly_rate'     => ['nullable', 'numeric', 'min:0', 'max:99999999.99'],
             'installation_fee' => ['nullable', 'numeric', 'min:0', 'max:99999999.99'],

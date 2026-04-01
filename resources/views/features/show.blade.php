@@ -71,7 +71,7 @@
                 <div class="mt-8 grid grid-cols-2 md:grid-cols-4 gap-6 pt-8 border-t border-gray-50">
                     <div>
                         <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Estado</p>
-                        <p class="text-sm font-bold text-primary uppercase">{{ $feature->status->value ?? $feature->status }}</p>
+                        <p class="text-sm font-bold text-primary uppercase">{{ $feature->status->label() }}</p>
                     </div>
                     <div>
                         <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Entrega Est.</p>
@@ -107,7 +107,7 @@
                                 <td class="px-8 py-4 text-gray-600">{{ $payment->paid_at->format('d/m/Y') }}</td>
                                 <td class="px-8 py-4">
                                     <div class="font-medium text-gray-900">{{ $payment->reference ?? 'Pago de mejora' }}</div>
-                                    <div class="text-[10px] text-gray-400 uppercase">{{ $payment->payment_method->value }}</div>
+                                    <div class="text-[10px] text-gray-400 uppercase">{{ $payment->payment_method->label() }}</div>
                                 </td>
                                 <td class="px-8 py-4 text-right font-bold text-emerald-600">${{ number_format($payment->amount, 2) }}</td>
                             </tr>

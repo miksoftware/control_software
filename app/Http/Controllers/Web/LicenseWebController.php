@@ -40,7 +40,10 @@ class LicenseWebController extends Controller
             ->paginate(15)
             ->withQueryString();
 
-        return view('licenses.index', compact('licenses'));
+        $clients       = Client::orderBy('name')->get();
+        $billingCycles = BillingCycle::cases();
+
+        return view('licenses.index', compact('licenses', 'clients', 'billingCycles'));
     }
 
     public function create(): View
@@ -97,6 +100,7 @@ class LicenseWebController extends Controller
             'billing_cycle'   => ['sometimes', 'string'],
             'monthly_rate'    => ['sometimes', 'numeric', 'min:0'],
             'status'          => ['sometimes', 'string'],
+            'site_url'        => ['nullable', 'url', 'max:500'],
             'next_billing_at' => ['nullable', 'date'],
         ]);
 

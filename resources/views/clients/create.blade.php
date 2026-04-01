@@ -24,7 +24,7 @@
                         <select name="client_type" id="client_type" required class="block w-full border-gray-300 rounded-xl bg-gray-50 focus:ring-accent focus:border-accent sm:text-sm">
                             @foreach($clientTypes as $type)
                                 <option value="{{ $type->value }}" {{ old('client_type') == $type->value ? 'selected' : '' }}>
-                                    {{ $type->value === 'reseller' ? 'Revendedor' : 'Cliente Final' }}
+                                    {{ $type->label() }}
                                 </option>
                             @endforeach
                         </select>

@@ -24,6 +24,7 @@ class Payment extends Model
     protected $fillable = [
         'client_id',
         'category',
+        'custom_project_id',
         'amount',
         'payment_method',
         'reference',
@@ -53,6 +54,14 @@ class Payment extends Model
     public function client(): BelongsTo
     {
         return $this->belongsTo(Client::class);
+    }
+
+    /**
+     * Proyecto asociado al pago (opcional).
+     */
+    public function customProject(): BelongsTo
+    {
+        return $this->belongsTo(CustomProject::class);
     }
 
     // ─── Scopes ─────────────────────────────────────────────────

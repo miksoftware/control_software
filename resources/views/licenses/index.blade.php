@@ -5,10 +5,10 @@
             <p class="text-gray-500 mt-1">Control de activaciones, ciclos de facturación y promociones.</p>
         </div>
         <div class="mt-4 md:mt-0">
-            <a href="{{ route('licenses.create') }}" class="inline-flex items-center px-4 py-2 bg-accent border border-transparent rounded-xl font-bold text-white hover:bg-accent/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent transition ease-in-out duration-150 shadow-sm shadow-accent/20">
+            <button onclick="document.getElementById('createLicenseModal').classList.remove('hidden')" class="inline-flex items-center px-4 py-2 bg-accent border border-transparent rounded-xl font-bold text-white hover:bg-accent/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent transition ease-in-out duration-150 shadow-sm shadow-accent/20">
                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
                 Nueva Licencia
-            </a>
+            </button>
         </div>
     </div>
 
@@ -19,9 +19,9 @@
                 <label for="status" class="block text-sm font-medium text-gray-700 mb-1">Estado</label>
                 <select name="status" id="status" class="block w-full border-gray-300 rounded-xl bg-gray-50 focus:ring-accent focus:border-accent sm:text-sm">
                     <option value="">Todos los estados</option>
-                    <option value="active" {{ request('status') == 'active' ? 'selected' : '' }}>Activas</option>
-                    <option value="expired" {{ request('status') == 'expired' ? 'selected' : '' }}>Vencidas</option>
-                    <option value="cancelled" {{ request('status') == 'cancelled' ? 'selected' : '' }}>Canceladas</option>
+                    @foreach(\App\Enums\LicenseStatus::cases() as $status)
+                        <option value="{{ $status->value }}" {{ request('status') == $status->value ? 'selected' : '' }}>{{ $status->label() }}</option>
+                    @endforeach
                 </select>
             </div>
             <div>
@@ -68,18 +68,18 @@
                                 </div>
                             </td>
                             <td class="px-6 py-4">
-                                <div class="text-sm text-gray-800 font-medium">{{ $license->billing_cycle->value ?? $license->billing_cycle }}</div>
+                                <div class="text-sm text-gray-800 font-medium">{{ $license->billing_cycle->label() }}</div>
                                 <div class="text-xs text-gray-500">${{ number_format($license->monthly_rate, 2) }} / mes</div>
                             </td>
                             <td class="px-6 py-4">
-                                @if($license->status === 'active')
+                                @if($license->status === \App\Enums\LicenseStatus::Active)
                                     <div class="text-sm text-gray-800 font-medium">
                                         {{ $license->next_billing_at ? $license->next_billing_at->format('d/m/Y') : 'N/A' }}
                                     </div>
-                                    <div class="text-[10px] text-emerald-600 font-bold uppercase">Activa</div>
+                                    <div class="text-[10px] text-emerald-600 font-bold uppercase">{{ $license->status->label() }}</div>
                                 @else
                                     <div class="text-sm text-gray-400 font-medium">--</div>
-                                    <div class="text-[10px] text-red-400 font-bold uppercase">Inactiva</div>
+                                    <div class="text-[10px] text-red-400 font-bold uppercase">{{ $license->status->label() }}</div>
                                 @endif
                             </td>
                             <td class="px-6 py-4 text-center">
@@ -117,4 +117,71 @@
             </div>
         @endif
     </div>
+
+    <!-- Modal: Nueva Licencia -->
+    <div id="createLicenseModal" class="hidden fixed inset-0 z-50 overflow-y-auto" aria-modal="true">
+        <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
+            <div class="fixed inset-0 bg-gray-500/75 transition-opacity" onclick="document.getElementById('createLicenseModal').classList.add('hidden')"></div>
+            <div class="relative bg-white rounded-2xl shadow-xl transform transition-all sm:max-w-2xl sm:w-full mx-auto">
+                <form method="POST" action="{{ route('licenses.store') }}">
+                    @csrf
+                    <div class="px-8 py-6 border-b border-gray-100">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-xl font-bold text-gray-900">Nueva Licencia MikPoS</h3>
+                            <button type="button" onclick="document.getElementById('createLicenseModal').classList.add('hidden')" class="text-gray-400 hover:text-gray-600">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="px-8 py-6 space-y-5">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Cliente *</label>
+                            <select name="client_id" required class="w-full rounded-xl border-gray-300 bg-gray-50 focus:border-accent focus:ring-accent sm:text-sm">
+                                <option value="">Selecciona un cliente</option>
+                                @foreach($clients as $client)
+                                    <option value="{{ $client->id }}">{{ $client->name }} ({{ $client->client_type->label() }})</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">URL del Sitio Web</label>
+                            <input type="url" name="site_url" placeholder="https://ejemplo.com" class="w-full rounded-xl border-gray-300 bg-gray-50 focus:border-accent focus:ring-accent sm:text-sm">
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Ciclo de Facturación *</label>
+                                <select name="billing_cycle" required class="w-full rounded-xl border-gray-300 bg-gray-50 focus:border-accent focus:ring-accent sm:text-sm">
+                                    @foreach($billingCycles as $cycle)
+                                        <option value="{{ $cycle->value }}">{{ $cycle->label() }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Tarifa Mensual ($) *</label>
+                                <input type="number" step="0.01" name="monthly_rate" value="50000.00" required class="w-full rounded-xl border-gray-300 bg-gray-50 focus:border-accent focus:ring-accent sm:text-sm">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Fecha Primer Pago *</label>
+                            <input type="date" name="next_billing_at" value="{{ now()->format('Y-m-d') }}" required class="w-full rounded-xl border-gray-300 bg-gray-50 focus:border-accent focus:ring-accent sm:text-sm">
+                        </div>
+                        <div class="bg-blue-50 border border-blue-100 p-4 rounded-xl flex items-start">
+                            <svg class="w-5 h-5 text-blue-500 mr-3 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            <p class="text-sm text-blue-700">
+                                <strong>Nota:</strong> Si el cliente es revendedor y esta es su 5ta licencia, se marcará automáticamente como <strong>Gratuita</strong>.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="px-8 py-4 bg-gray-50 border-t border-gray-100 flex items-center justify-end space-x-3 rounded-b-2xl">
+                        <button type="button" onclick="document.getElementById('createLicenseModal').classList.add('hidden')" class="px-4 py-2 text-sm font-bold text-gray-500 hover:text-gray-700">Cancelar</button>
+                        <button type="submit" class="px-6 py-2 bg-accent text-white text-sm font-bold rounded-xl hover:bg-accent/90 transition-colors shadow-sm shadow-accent/20">Activar Licencia</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    @if($errors->any())
+    <script>document.addEventListener('DOMContentLoaded', () => document.getElementById('createLicenseModal').classList.remove('hidden'));</script>
+    @endif
 </x-app-layout>

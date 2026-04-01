@@ -70,7 +70,7 @@
                                     <div class="text-[10px] text-gray-400">Iniciado: {{ $project->start_date?->format('d/m/Y') }}</div>
                                 </td>
                                 <td class="px-6 py-4">
-                                    <span class="text-xs text-gray-600 uppercase">{{ $project->status->value }}</span>
+                                    <span class="text-xs text-gray-600 uppercase">{{ $project->status->label() }}</span>
                                 </td>
                                 <td class="px-6 py-4 text-right font-bold text-gray-900">${{ number_format($project->contract_value, 2) }}</td>
                             </tr>
@@ -85,7 +85,7 @@
                                     <div class="text-[10px] text-gray-400">Solicitada: {{ $feature->created_at->format('d/m/Y') }}</div>
                                 </td>
                                 <td class="px-6 py-4">
-                                    <span class="text-xs text-gray-600 uppercase">{{ $feature->status->value }}</span>
+                                    <span class="text-xs text-gray-600 uppercase">{{ $feature->status->label() }}</span>
                                 </td>
                                 <td class="px-6 py-4 text-right font-bold text-gray-900">${{ number_format($feature->total_cost, 2) }}</td>
                             </tr>
@@ -123,7 +123,7 @@
                                     <div class="text-sm font-medium text-gray-800">{{ $payment->reference ?? 'Abono a cuenta' }}</div>
                                     <div class="text-[10px] text-gray-400 uppercase font-bold">{{ $payment->category }}</div>
                                 </td>
-                                <td class="px-6 py-4 text-xs text-gray-500">{{ $payment->payment_method->value }}</td>
+                                <td class="px-6 py-4 text-xs text-gray-500">{{ $payment->payment_method->label() }}</td>
                                 <td class="px-6 py-4 text-right font-bold text-emerald-600">+ ${{ number_format($payment->amount, 2) }}</td>
                             </tr>
                         @empty

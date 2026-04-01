@@ -19,11 +19,17 @@
                             <option value="">Selecciona un cliente</option>
                             @foreach($clients as $client)
                                 <option value="{{ $client->id }}" {{ (old('client_id') ?? request('client_id')) == $client->id ? 'selected' : '' }}>
-                                    {{ $client->name }} ({{ $client->client_type->value === 'reseller' ? 'Revendedor' : 'Final' }})
+                                    {{ $client->name }} ({{ $client->client_type->label() }})
                                 </option>
                             @endforeach
                         </select>
                         <x-input-error :messages="$errors->get('client_id')" class="mt-1" />
+                    </div>
+
+                    <div class="col-span-2">
+                        <label for="site_url" class="block text-sm font-semibold text-gray-700 mb-1">URL del Sitio Web</label>
+                        <input type="url" name="site_url" id="site_url" value="{{ old('site_url') }}" placeholder="https://ejemplo.com" class="block w-full border-gray-300 rounded-xl bg-gray-50 focus:ring-accent focus:border-accent sm:text-sm">
+                        <x-input-error :messages="$errors->get('site_url')" class="mt-1" />
                     </div>
 
                     <div>
@@ -31,7 +37,7 @@
                         <select name="billing_cycle" id="billing_cycle" required class="block w-full border-gray-300 rounded-xl bg-gray-50 focus:ring-accent focus:border-accent sm:text-sm">
                             @foreach($billingCycles as $cycle)
                                 <option value="{{ $cycle->value }}" {{ old('billing_cycle') == $cycle->value ? 'selected' : '' }}>
-                                    {{ $cycle->value }}
+                                    {{ $cycle->label() }}
                                 </option>
                             @endforeach
                         </select>

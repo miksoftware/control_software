@@ -24,6 +24,7 @@
             <dl class="space-y-2">
                 <div><dt class="text-xs text-gray-400">Cliente</dt><dd class="text-sm font-medium"><a href="{{ route('clients.show', $license->client) }}" class="text-indigo-600 hover:text-indigo-800">{{ $license->client->name }}</a></dd></div>
                 <div><dt class="text-xs text-gray-400">Tipo Cliente</dt><dd class="text-sm font-medium">{{ $license->client->client_type->label() }}</dd></div>
+                <div><dt class="text-xs text-gray-400">URL Sitio Web</dt><dd class="text-sm font-medium">@if($license->site_url)<a href="{{ $license->site_url }}" target="_blank" class="text-indigo-600 hover:text-indigo-800 break-all">{{ $license->site_url }}</a>@else <span class="text-gray-400">No registrada</span> @endif</dd></div>
                 <div><dt class="text-xs text-gray-400">Ciclo</dt><dd class="text-sm font-medium">{{ $license->billing_cycle->label() }}</dd></div>
                 <div><dt class="text-xs text-gray-400">Tarifa Mensual</dt><dd class="text-sm font-medium">${{ number_format((float)$license->monthly_rate, 0, ',', '.') }}</dd></div>
                 <div><dt class="text-xs text-gray-400">Costo Instalación</dt><dd class="text-sm font-medium">${{ number_format((float)$license->installation_fee, 0, ',', '.') }}</dd></div>

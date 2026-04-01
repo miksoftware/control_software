@@ -35,7 +35,10 @@ class ProjectWebController extends Controller
             ->paginate(15)
             ->withQueryString();
 
-        return view('projects.index', compact('projects'));
+        $clients  = Client::orderBy('name')->get();
+        $statuses = ProjectStatus::cases();
+
+        return view('projects.index', compact('projects', 'clients', 'statuses'));
     }
 
     public function create(): View
@@ -56,7 +59,7 @@ class ProjectWebController extends Controller
 
     public function show(CustomProject $project): View
     {
-        $project->load(['client']);
+        $project->load(['client', 'payments']);
 
         return view('projects.show', compact('project'));
     }

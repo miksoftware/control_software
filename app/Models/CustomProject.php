@@ -59,6 +59,14 @@ class CustomProject extends Model
         return $this->belongsTo(Client::class);
     }
 
+    /**
+     * Pagos asociados directamente a este proyecto.
+     */
+    public function payments(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Payment::class);
+    }
+
     // ─── Scopes ─────────────────────────────────────────────────
 
     /**

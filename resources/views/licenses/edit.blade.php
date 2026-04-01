@@ -21,12 +21,18 @@
                         </div>
                     </div>
 
+                    <div class="col-span-2">
+                        <label for="site_url" class="block text-sm font-semibold text-gray-700 mb-1">URL del Sitio Web</label>
+                        <input type="url" name="site_url" id="site_url" value="{{ old('site_url', $license->site_url) }}" placeholder="https://ejemplo.com" class="block w-full border-gray-300 rounded-xl bg-gray-50 focus:ring-accent focus:border-accent sm:text-sm">
+                        <x-input-error :messages="$errors->get('site_url')" class="mt-1" />
+                    </div>
+
                     <div>
                         <label for="status" class="block text-sm font-semibold text-gray-700 mb-1">Estado de Licencia</label>
                         <select name="status" id="status" required class="block w-full border-gray-300 rounded-xl bg-gray-50 focus:ring-accent focus:border-accent sm:text-sm">
-                            <option value="active" {{ old('status', $license->status) === 'active' ? 'selected' : '' }}>Activa</option>
-                            <option value="expired" {{ old('status', $license->status) === 'expired' ? 'selected' : '' }}>Vencida</option>
-                            <option value="cancelled" {{ old('status', $license->status) === 'cancelled' ? 'selected' : '' }}>Cancelada</option>
+                            @foreach(\App\Enums\LicenseStatus::cases() as $status)
+                                <option value="{{ $status->value }}" {{ old('status', $license->status->value) == $status->value ? 'selected' : '' }}>{{ $status->label() }}</option>
+                            @endforeach
                         </select>
                         <x-input-error :messages="$errors->get('status')" class="mt-1" />
                     </div>
@@ -36,7 +42,7 @@
                         <select name="billing_cycle" id="billing_cycle" required class="block w-full border-gray-300 rounded-xl bg-gray-50 focus:ring-accent focus:border-accent sm:text-sm">
                             @foreach($billingCycles as $cycle)
                                 <option value="{{ $cycle->value }}" {{ old('billing_cycle', $license->billing_cycle->value ?? $license->billing_cycle) == $cycle->value ? 'selected' : '' }}>
-                                    {{ $cycle->value }}
+                                    {{ $cycle->label() }}
                                 </option>
                             @endforeach
                         </select>

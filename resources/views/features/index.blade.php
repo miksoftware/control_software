@@ -33,7 +33,7 @@
                             </td>
                             <td class="px-6 py-4">
                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-primary/10 text-primary uppercase tracking-wider">
-                                    {{ $feature->status->value ?? $feature->status }}
+                                    {{ $feature->status->label() }}
                                 </span>
                             </td>
                             <td class="px-6 py-4 text-right text-sm font-medium text-gray-900">

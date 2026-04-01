@@ -43,7 +43,7 @@
                         <select name="payment_method" id="payment_method" required class="block w-full border-gray-300 rounded-xl bg-gray-50 focus:ring-accent focus:border-accent sm:text-sm">
                             @foreach($paymentMethods as $method)
                                 <option value="{{ $method->value }}" {{ old('payment_method') == $method->value ? 'selected' : '' }}>
-                                    {{ $method->value }}
+                                    {{ $method->label() }}
                                 </option>
                             @endforeach
                         </select>

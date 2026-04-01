@@ -27,7 +27,8 @@ class StorePaymentRequest extends FormRequest
             'payment_method' => ['required', Rule::enum(PaymentMethod::class)],
             'reference'      => ['nullable', 'string', 'max:100'],
             'notes'          => ['nullable', 'string', 'max:2000'],
-            'paid_at'        => ['nullable', 'date', 'before_or_equal:today'],
+            'paid_at'           => ['nullable', 'date', 'before_or_equal:today'],
+            'custom_project_id' => ['nullable', 'integer', 'exists:custom_projects,id'],
         ];
     }
 

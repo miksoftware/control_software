@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Web;
 use App\Enums\PaymentMethod;
 use App\Http\Controllers\Controller;
 use App\Models\Client;
+use App\Models\CustomProject;
 use App\Models\Payment;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -16,7 +17,7 @@ class PaymentWebController extends Controller
 {
     public function index(Request $request): View
     {
-        $query = Payment::with('client');
+        $query = Payment::with(['client', 'customProject']);
 
         if ($request->filled('client_id')) {
             $query->where('client_id', $request->input('client_id'));
@@ -41,8 +42,9 @@ class PaymentWebController extends Controller
 
         $paymentMethods = PaymentMethod::cases();
         $clients = Client::orderBy('name')->get();
+        $projects = CustomProject::with('client')->orderBy('name')->get();
 
-        return view('payments.index', compact('payments', 'paymentMethods', 'clients'));
+        return view('payments.index', compact('payments', 'paymentMethods', 'clients', 'projects'));
     }
 
     public function create(Request $request): View
@@ -60,13 +62,14 @@ class PaymentWebController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'client_id'      => ['required', 'exists:clients,id'],
-            'amount'         => ['required', 'numeric', 'min:0.01'],
-            'category'       => ['required', 'string', 'in:global,projects,features'],
-            'payment_method' => ['required', 'string'],
-            'paid_at'        => ['required', 'date'],
-            'reference'      => ['nullable', 'string', 'max:100'],
-            'notes'          => ['nullable', 'string'],
+            'client_id'         => ['required', 'exists:clients,id'],
+            'amount'            => ['required', 'numeric', 'min:0.01'],
+            'category'          => ['required', 'string', 'in:global,projects,features'],
+            'payment_method'    => ['required', 'string'],
+            'paid_at'           => ['required', 'date'],
+            'reference'         => ['nullable', 'string', 'max:100'],
+            'notes'             => ['nullable', 'string'],
+            'custom_project_id' => ['nullable', 'exists:custom_projects,id'],
         ]);
 
         $client = Client::findOrFail($validated['client_id']);
