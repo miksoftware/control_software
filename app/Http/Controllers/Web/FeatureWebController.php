@@ -87,13 +87,6 @@ class FeatureWebController extends Controller
             $validated['completed_at'] = now()->toDateString();
         }
 
-        if (isset($validated['total_cost'])) {
-            $totalPaid = $feature->total_paid;
-            if ((float) $validated['total_cost'] < $totalPaid) {
-                return back()->with('error', "El costo no puede ser menor a lo ya pagado (\${$totalPaid}).");
-            }
-        }
-
         $feature->update($validated);
 
         return redirect()->route('features.show', $feature)
@@ -102,10 +95,6 @@ class FeatureWebController extends Controller
 
     public function destroy(MikposFeature $feature): RedirectResponse
     {
-        if ($feature->payments()->exists()) {
-            return back()->with('error', 'No se puede eliminar una mejora con pagos registrados.');
-        }
-
         $feature->delete();
 
         return redirect()->route('features.index')

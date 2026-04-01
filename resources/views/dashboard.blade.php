@@ -11,10 +11,9 @@
                 <div class="p-3 bg-primary/10 text-primary rounded-xl">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
                 </div>
-                <span class="text-emerald-500 text-xs font-bold">+12%</span>
             </div>
             <p class="text-sm font-medium text-gray-500">Clientes Totales</p>
-            <p class="text-2xl font-bold text-gray-900">{{ \App\Models\Client::count() }}</p>
+            <p class="text-2xl font-bold text-gray-900">{{ $stats['total_clients'] }}</p>
         </div>
 
         <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
@@ -22,10 +21,9 @@
                 <div class="p-3 bg-accent/10 text-accent rounded-xl">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
                 </div>
-                <span class="text-emerald-500 text-xs font-bold">+5%</span>
             </div>
             <p class="text-sm font-medium text-gray-500">Licencias Activas</p>
-            <p class="text-2xl font-bold text-gray-900">{{ \App\Models\MikposLicense::where('status', 'active')->count() }}</p>
+            <p class="text-2xl font-bold text-gray-900">{{ $stats['active_licenses'] }}</p>
         </div>
 
         <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
@@ -35,7 +33,7 @@
                 </div>
             </div>
             <p class="text-sm font-medium text-gray-500">Ingresos del Mes</p>
-            <p class="text-2xl font-bold text-gray-900">${{ number_format(\App\Models\Payment::whereMonth('paid_at', now()->month)->sum('amount'), 2) }}</p>
+            <p class="text-2xl font-bold text-gray-900">${{ number_format($stats['revenue_this_month'], 2) }}</p>
         </div>
 
         <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
@@ -45,12 +43,7 @@
                 </div>
             </div>
             <p class="text-sm font-medium text-gray-500">Saldo Pendiente</p>
-            @php
-                $totalContract = \App\Models\CustomProject::sum('contract_value') + \App\Models\MikposFeature::sum('total_cost');
-                $totalPaid = \App\Models\Payment::sum('amount');
-                $pending = $totalContract - $totalPaid;
-            @endphp
-            <p class="text-2xl font-bold text-red-500">${{ number_format($pending, 2) }}</p>
+            <p class="text-2xl font-bold text-red-500">${{ number_format($stats['pending_balance'], 2) }}</p>
         </div>
     </div>
 
@@ -62,7 +55,7 @@
                 <a href="{{ route('clients.index') }}" class="text-xs font-bold text-accent uppercase hover:underline">Ver todos</a>
             </div>
             <div class="divide-y divide-gray-50">
-                @foreach(\App\Models\Client::orderByDesc('created_at')->limit(5)->get() as $client)
+                @foreach($recentClients as $client)
                     <div class="px-6 py-4 flex items-center justify-between">
                         <div class="flex items-center">
                             <div class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-xs font-bold mr-3 text-gray-500">
@@ -70,7 +63,7 @@
                             </div>
                             <div>
                                 <p class="text-sm font-bold text-gray-900">{{ $client->name }}</p>
-                                <p class="text-[10px] text-gray-400 uppercase tracking-widest">{{ $client->client_type->value }}</p>
+                                <p class="text-[10px] text-gray-400 uppercase tracking-widest">{{ $client->client_type->label() }}</p>
                             </div>
                         </div>
                         <a href="{{ route('clients.show', $client) }}" class="text-gray-400 hover:text-primary">
@@ -88,7 +81,7 @@
                 <a href="{{ route('payments.index') }}" class="text-xs font-bold text-accent uppercase hover:underline">Ver todos</a>
             </div>
             <div class="divide-y divide-gray-50">
-                @foreach(\App\Models\Payment::with('client')->orderByDesc('paid_at')->limit(5)->get() as $payment)
+                @foreach($recentPayments as $payment)
                     <div class="px-6 py-4 flex items-center justify-between">
                         <div class="flex items-center">
                             <div class="p-2 bg-emerald-50 text-emerald-600 rounded-lg mr-3">

@@ -5,9 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StorePaymentRequest;
-use App\Models\CustomProject;
-use App\Models\MikposFeature;
-use App\Models\MikposLicense;
+use App\Models\Client;
 use App\Models\Payment;
 use App\Services\PaymentService;
 use Illuminate\Http\JsonResponse;
@@ -25,25 +23,20 @@ class PaymentController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $query = Payment::with('payable');
+        $query = Payment::with('client');
 
-        // Filtro por tipo de entidad
-        if ($request->filled('payable_type')) {
-            $type = $this->resolvePayableType($request->input('payable_type'));
-            $query->forType($type);
+        if ($request->filled('client_id')) {
+            $query->where('client_id', $request->integer('client_id'));
         }
 
-        // Filtro por entidad específica
-        if ($request->filled('payable_id')) {
-            $query->where('payable_id', $request->integer('payable_id'));
+        if ($request->filled('category')) {
+            $query->forCategory($request->input('category'));
         }
 
-        // Filtro por método de pago
         if ($request->filled('payment_method')) {
             $query->where('payment_method', $request->input('payment_method'));
         }
 
-        // Filtro por rango de fechas
         if ($request->filled('from') && $request->filled('to')) {
             $query->betweenDates($request->input('from'), $request->input('to'));
         }
@@ -63,14 +56,10 @@ class PaymentController extends Controller
      */
     public function store(StorePaymentRequest $request): JsonResponse
     {
-        $payableType = $request->resolvedPayableType();
-        $payableId   = $request->validated('payable_id');
-
-        /** @var \Illuminate\Database\Eloquent\Model $payable */
-        $payable = $payableType::findOrFail($payableId);
+        $client = Client::findOrFail($request->validated('client_id'));
 
         try {
-            $payment = $this->paymentService->registerPayment($payable, $request->validated());
+            $payment = $this->paymentService->registerPayment($client, $request->validated());
         } catch (\InvalidArgumentException|\LogicException $e) {
             return response()->json([
                 'success' => false,
@@ -78,16 +67,13 @@ class PaymentController extends Controller
             ], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 
-        $payment->load('payable');
-
-        // Obtener resumen financiero actualizado
-        $financialSummary = $this->paymentService->getFinancialSummary($payable);
+        $payment->load('client');
 
         return response()->json([
             'success'           => true,
             'message'           => 'Pago registrado exitosamente.',
             'data'              => $payment,
-            'financial_summary' => $financialSummary,
+            'financial_summary' => $this->paymentService->getFinancialSummary($client),
         ], Response::HTTP_CREATED);
     }
 
@@ -96,7 +82,7 @@ class PaymentController extends Controller
      */
     public function show(Payment $payment): JsonResponse
     {
-        $payment->load('payable');
+        $payment->load('client');
 
         return response()->json([
             'success' => true,
@@ -118,39 +104,20 @@ class PaymentController extends Controller
     }
 
     /**
-     * Obtener el resumen financiero de una entidad pagable.
+     * Obtener el resumen financiero de un cliente.
      */
     public function financialSummary(Request $request): JsonResponse
     {
         $request->validate([
-            'payable_type' => ['required', 'string'],
-            'payable_id'   => ['required', 'integer', 'min:1'],
+            'client_id' => ['required', 'integer', 'exists:clients,id'],
         ]);
 
-        $payableType = $this->resolvePayableType($request->input('payable_type'));
-
-        /** @var \Illuminate\Database\Eloquent\Model $payable */
-        $payable = $payableType::findOrFail($request->integer('payable_id'));
+        $client = Client::findOrFail($request->integer('client_id'));
 
         return response()->json([
             'success'           => true,
-            'financial_summary' => $this->paymentService->getFinancialSummary($payable),
-            'payment_history'   => $this->paymentService->getPaymentHistory($payable),
+            'financial_summary' => $this->paymentService->getFinancialSummary($client),
+            'payment_history'   => $this->paymentService->getPaymentHistory($client),
         ]);
-    }
-
-    /**
-     * Resuelve el tipo de modelo a partir de un alias o FQCN.
-     *
-     * @return class-string<\Illuminate\Database\Eloquent\Model>
-     */
-    private function resolvePayableType(string $type): string
-    {
-        return match ($type) {
-            'license', MikposLicense::class  => MikposLicense::class,
-            'feature', MikposFeature::class  => MikposFeature::class,
-            'project', CustomProject::class  => CustomProject::class,
-            default => $type,
-        };
     }
 }

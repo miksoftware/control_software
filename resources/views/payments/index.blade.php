@@ -29,7 +29,7 @@
                             </td>
                             <td class="px-6 py-4">
                                 <div class="text-gray-800">{{ $payment->reference ?? 'Pago registrado' }}</div>
-                                <div class="text-[10px] text-gray-400 uppercase tracking-widest">{{ class_basename($payment->payable_type) }} #{{ $payment->payable_id }}</div>
+                                <div class="text-[10px] text-gray-400 uppercase tracking-widest">{{ ucfirst($payment->category) }}</div>
                             </td>
                             <td class="px-6 py-4 text-right">
                                 <span class="text-emerald-600 font-bold">${{ number_format($payment->amount, 2) }}</span>

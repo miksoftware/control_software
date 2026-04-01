@@ -85,13 +85,6 @@ class ProjectWebController extends Controller
             $validated['actual_end_date'] = now()->toDateString();
         }
 
-        if (isset($validated['contract_value'])) {
-            $totalPaid = $project->total_paid;
-            if ((float) $validated['contract_value'] < $totalPaid) {
-                return back()->with('error', "El valor no puede ser menor a lo ya pagado (\${$totalPaid}).");
-            }
-        }
-
         $project->update($validated);
 
         return redirect()->route('projects.show', $project)
@@ -100,10 +93,6 @@ class ProjectWebController extends Controller
 
     public function destroy(CustomProject $project): RedirectResponse
     {
-        if ($project->payments()->exists()) {
-            return back()->with('error', 'No se puede eliminar un proyecto con pagos registrados.');
-        }
-
         $project->delete();
 
         return redirect()->route('projects.index')

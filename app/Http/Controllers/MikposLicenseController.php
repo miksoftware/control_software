@@ -102,10 +102,9 @@ class MikposLicenseController extends Controller
      */
     public function show(MikposLicense $license): JsonResponse
     {
-        $license->load(['client', 'payments', 'features']);
+        $license->load(['client', 'features']);
 
-        // Agregar atributos calculados
-        $license->append(['cycle_amount', 'total_paid', 'outstanding_balance']);
+        $license->append(['cycle_amount']);
 
         $responseData = [
             'success' => true,

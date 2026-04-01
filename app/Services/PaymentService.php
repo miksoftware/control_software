@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Models\Client;
 use App\Models\Payment;
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 use LogicException;
@@ -13,169 +14,121 @@ use LogicException;
 final class PaymentService
 {
     /**
-     * Modelos que soportan pagos polimórficos.
+     * Categorías válidas de pago.
      *
-     * @var list<class-string<Model>>
+     * @var list<string>
      */
-    private const array PAYABLE_MODELS = [
-        \App\Models\MikposLicense::class,
-        \App\Models\MikposFeature::class,
-        \App\Models\CustomProject::class,
-    ];
+    private const array VALID_CATEGORIES = ['global', 'projects', 'features'];
 
     /**
-     * Registra un pago/abono contra una entidad pagable.
+     * Registra un pago/abono contra la cuenta corriente de un cliente.
      *
-     * Valida que:
-     * - El modelo sea de un tipo soportado.
-     * - El monto no exceda el saldo pendiente.
-     * - El monto sea positivo.
+     * @param  Client               $client  El cliente al que se le registra el pago.
+     * @param  array<string, mixed> $data    Datos del pago (amount, category, payment_method, reference, notes, paid_at).
+     * @return Payment                       El pago registrado.
      *
-     * @param  Model                 $payable La entidad a la que se le registra el pago.
-     * @param  array<string, mixed>  $data    Datos del pago (amount, payment_method, reference, notes, paid_at).
-     * @return Payment                        El pago registrado.
-     *
-     * @throws InvalidArgumentException Si el modelo no es de un tipo soportado.
-     * @throws LogicException           Si el monto excede el saldo pendiente.
+     * @throws InvalidArgumentException Si la categoría no es válida o el monto no es positivo.
+     * @throws LogicException           Si el monto excede el saldo pendiente de la categoría.
      */
-    public function registerPayment(Model $payable, array $data): Payment
+    public function registerPayment(Client $client, array $data): Payment
     {
-        // Validar que el modelo soporte pagos
-        $this->validatePayableModel($payable);
+        $category = $data['category'] ?? 'global';
 
-        return DB::transaction(function () use ($payable, $data): Payment {
-            // Obtener saldo pendiente (con lock para concurrencia)
-            $outstandingBalance = $this->getOutstandingBalance($payable);
+        if (! in_array($category, self::VALID_CATEGORIES, true)) {
+            throw new InvalidArgumentException(
+                sprintf('La categoría "%s" no es válida. Use: %s', $category, implode(', ', self::VALID_CATEGORIES))
+            );
+        }
+
+        return DB::transaction(function () use ($client, $data, $category): Payment {
             $amount = (float) $data['amount'];
 
-            // Validar que el monto sea positivo
             if ($amount <= 0) {
-                throw new InvalidArgumentException(
-                    'El monto del pago debe ser mayor a cero.'
-                );
+                throw new InvalidArgumentException('El monto del pago debe ser mayor a cero.');
             }
 
-            // Validar que no exceda el saldo pendiente
-            if ($amount > $outstandingBalance) {
-                throw new LogicException(
-                    sprintf(
-                        'El monto del abono ($%s) excede el saldo pendiente ($%s).',
-                        number_format($amount, 2),
-                        number_format($outstandingBalance, 2)
-                    )
-                );
+            // Validar saldo para categorías específicas (no global)
+            if ($category !== 'global') {
+                $pending = $this->getCategoryPendingBalance($client, $category);
+                if ($amount > $pending) {
+                    throw new LogicException(
+                        sprintf(
+                            'El monto del abono ($%s) excede el saldo pendiente de %s ($%s).',
+                            number_format($amount, 2),
+                            $category,
+                            number_format($pending, 2)
+                        )
+                    );
+                }
             }
 
-            // Asignar fecha de pago por defecto (hoy)
-            $data['paid_at'] = $data['paid_at'] ?? now()->toDateString();
+            $data['paid_at']  = $data['paid_at'] ?? now()->toDateString();
+            $data['category'] = $category;
 
-            /** @var Payment $payment */
-            $payment = $payable->payments()->create($data);
-
-            return $payment;
+            return $client->payments()->create($data);
         });
     }
 
     /**
-     * Obtiene el saldo pendiente de una entidad pagable con lock pessimista.
-     *
-     * @param  Model $payable La entidad pagable.
-     * @return float          El saldo pendiente.
+     * Obtiene el saldo pendiente de una categoría específica para el cliente.
      */
-    public function getOutstandingBalance(Model $payable): float
+    public function getCategoryPendingBalance(Client $client, string $category): float
     {
-        $totalValue = $this->getTotalValue($payable);
-        $totalPaid  = $this->getTotalPaid($payable);
+        $totalDebt = match ($category) {
+            'projects' => (float) $client->customProjects()->sum('contract_value'),
+            'features' => (float) $client->mikposFeatures()->sum('total_cost'),
+            'global'   => (float) $client->customProjects()->sum('contract_value')
+                        + (float) $client->mikposFeatures()->sum('total_cost'),
+            default    => 0.0,
+        };
 
-        return max(0, $totalValue - $totalPaid);
+        $totalPaid = match ($category) {
+            'global' => (float) $client->payments()->sum('amount'),
+            default  => (float) $client->payments()->where('category', $category)->sum('amount'),
+        };
+
+        return max(0, $totalDebt - $totalPaid);
     }
 
     /**
-     * Obtiene el historial de pagos de una entidad pagable.
-     *
-     * @param  Model                                              $payable La entidad pagable.
-     * @return \Illuminate\Database\Eloquent\Collection<Payment>           Los pagos asociados.
+     * Obtiene el historial de pagos de un cliente.
      */
-    public function getPaymentHistory(Model $payable): \Illuminate\Database\Eloquent\Collection
+    public function getPaymentHistory(Client $client, ?string $category = null): Collection
     {
-        $this->validatePayableModel($payable);
+        $query = $client->payments();
 
-        return $payable->payments()
-            ->orderByDesc('paid_at')
+        if ($category !== null) {
+            $query->where('category', $category);
+        }
+
+        return $query->orderByDesc('paid_at')
             ->orderByDesc('created_at')
             ->get();
     }
 
     /**
-     * Obtiene un resumen financiero de la entidad pagable.
+     * Obtiene un resumen financiero del cliente.
      *
-     * @param  Model                $payable La entidad pagable.
-     * @return array<string, mixed>          Resumen con totales, pagos y saldo.
+     * @return array<string, mixed>
      */
-    public function getFinancialSummary(Model $payable): array
+    public function getFinancialSummary(Client $client): array
     {
-        $this->validatePayableModel($payable);
-
-        $totalValue = $this->getTotalValue($payable);
-        $totalPaid  = $this->getTotalPaid($payable);
-        $balance    = max(0, $totalValue - $totalPaid);
-        $progress   = $totalValue > 0 ? round(($totalPaid / $totalValue) * 100, 2) : 100.0;
+        $totalProjectsDebt  = (float) $client->customProjects()->sum('contract_value');
+        $totalFeaturesDebt  = (float) $client->mikposFeatures()->sum('total_cost');
+        $totalDebt          = $totalProjectsDebt + $totalFeaturesDebt;
+        $totalPaid          = (float) $client->payments()->sum('amount');
+        $balance            = max(0, $totalDebt - $totalPaid);
+        $progress           = $totalDebt > 0 ? round(($totalPaid / $totalDebt) * 100, 2) : 100.0;
 
         return [
-            'total_value'         => $totalValue,
-            'total_paid'          => $totalPaid,
-            'outstanding_balance' => $balance,
-            'payment_progress'    => min(100.0, $progress),
-            'is_fully_paid'       => $balance <= 0,
-            'payments_count'      => $payable->payments()->count(),
+            'total_debt'             => $totalDebt,
+            'total_projects_debt'    => $totalProjectsDebt,
+            'total_features_debt'    => $totalFeaturesDebt,
+            'total_paid'             => $totalPaid,
+            'outstanding_balance'    => $balance,
+            'payment_progress'       => min(100.0, $progress),
+            'is_fully_paid'          => $balance <= 0,
+            'payments_count'         => $client->payments()->count(),
         ];
-    }
-
-    /**
-     * Obtiene el valor total de la entidad (contrato/costo/ciclo).
-     */
-    private function getTotalValue(Model $payable): float
-    {
-        return match (true) {
-            $payable instanceof \App\Models\MikposLicense => (float) $payable->installation_fee + $payable->cycle_amount,
-            $payable instanceof \App\Models\MikposFeature => (float) $payable->total_cost,
-            $payable instanceof \App\Models\CustomProject => (float) $payable->contract_value,
-            default => throw new InvalidArgumentException('Modelo no soportado para cálculo de valor total.'),
-        };
-    }
-
-    /**
-     * Obtiene el total de pagos registrados contra la entidad.
-     */
-    private function getTotalPaid(Model $payable): float
-    {
-        return (float) $payable->payments()->lockForUpdate()->sum('amount');
-    }
-
-    /**
-     * Valida que el modelo sea de un tipo soportado para pagos.
-     *
-     * @throws InvalidArgumentException Si no es un modelo payable válido.
-     */
-    private function validatePayableModel(Model $payable): void
-    {
-        $isValid = false;
-
-        foreach (self::PAYABLE_MODELS as $modelClass) {
-            if ($payable instanceof $modelClass) {
-                $isValid = true;
-                break;
-            }
-        }
-
-        if (! $isValid) {
-            throw new InvalidArgumentException(
-                sprintf(
-                    'El modelo "%s" no soporta pagos. Modelos válidos: %s',
-                    get_class($payable),
-                    implode(', ', self::PAYABLE_MODELS)
-                )
-            );
-        }
     }
 }

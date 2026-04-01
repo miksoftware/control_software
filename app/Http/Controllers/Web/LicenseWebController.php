@@ -73,7 +73,7 @@ class LicenseWebController extends Controller
 
     public function show(MikposLicense $license): View
     {
-        $license->load(['client', 'payments' => fn ($q) => $q->orderByDesc('paid_at'), 'features']);
+        $license->load(['client', 'features']);
 
         $resellerSummary = null;
         if ($license->client->is_reseller) {

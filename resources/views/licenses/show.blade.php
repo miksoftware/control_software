@@ -12,7 +12,6 @@
                 @endif
             </div>
             <div class="flex items-center space-x-2">
-                <a href="{{ route('payments.create') }}?payable_type=license&payable_id={{ $license->id }}" class="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors">+ Registrar Pago</a>
                 <a href="{{ route('licenses.edit', $license) }}" class="px-4 py-2 bg-gray-800 text-white text-sm font-medium rounded-lg hover:bg-gray-700 transition-colors">Editar</a>
             </div>
         </div>
@@ -36,20 +35,20 @@
 
         <!-- Financial Summary -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <h3 class="text-sm font-semibold text-gray-500 uppercase mb-3">Resumen Financiero</h3>
+            <h3 class="text-sm font-semibold text-gray-500 uppercase mb-3">Resumen de Licencia</h3>
             <div class="space-y-4">
                 <div class="text-center p-4 bg-gray-50 rounded-lg">
-                    <p class="text-xs text-gray-400">Saldo Pendiente</p>
-                    <p class="text-3xl font-bold {{ $license->outstanding_balance > 0 ? 'text-red-600' : 'text-emerald-600' }}">${{ number_format($license->outstanding_balance, 0, ',', '.') }}</p>
+                    <p class="text-xs text-gray-400">Valor Total por Ciclo</p>
+                    <p class="text-3xl font-bold text-blue-600">${{ number_format((float)$license->installation_fee + $license->cycle_amount, 0, ',', '.') }}</p>
                 </div>
                 <div class="grid grid-cols-2 gap-3 text-center">
                     <div class="p-3 bg-blue-50 rounded-lg">
-                        <p class="text-xs text-blue-500">Total</p>
-                        <p class="text-lg font-bold text-blue-700">${{ number_format((float)$license->installation_fee + $license->cycle_amount, 0, ',', '.') }}</p>
+                        <p class="text-xs text-blue-500">Tarifa Ciclo</p>
+                        <p class="text-lg font-bold text-blue-700">${{ number_format($license->cycle_amount, 0, ',', '.') }}</p>
                     </div>
                     <div class="p-3 bg-emerald-50 rounded-lg">
-                        <p class="text-xs text-emerald-500">Pagado</p>
-                        <p class="text-lg font-bold text-emerald-700">${{ number_format($license->total_paid, 0, ',', '.') }}</p>
+                        <p class="text-xs text-emerald-500">Instalación</p>
+                        <p class="text-lg font-bold text-emerald-700">${{ number_format((float)$license->installation_fee, 0, ',', '.') }}</p>
                     </div>
                 </div>
             </div>
@@ -78,23 +77,24 @@
         @endif
     </div>
 
-    <!-- Payments History -->
+    <!-- Features List -->
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-            <h3 class="font-semibold text-gray-800">💰 Historial de Pagos ({{ $license->payments->count() }})</h3>
-            <a href="{{ route('payments.create') }}?payable_type=license&payable_id={{ $license->id }}" class="text-sm text-green-600 hover:text-green-800">+ Registrar Pago</a>
+        <div class="px-6 py-4 border-b border-gray-100">
+            <h3 class="font-semibold text-gray-800">Mejoras/Cambios Asociados ({{ $license->features->count() }})</h3>
         </div>
         <div class="divide-y divide-gray-50">
-            @forelse($license->payments as $payment)
+            @forelse($license->features as $feature)
                 <div class="px-6 py-3 flex items-center justify-between hover:bg-gray-50">
                     <div>
-                        <p class="font-medium text-sm text-gray-800">${{ number_format((float)$payment->amount, 0, ',', '.') }}</p>
-                        <p class="text-xs text-gray-500">{{ $payment->payment_method->label() }} · {{ $payment->paid_at->format('d/m/Y') }}</p>
+                        <p class="font-medium text-sm text-gray-800">{{ $feature->title }}</p>
+                        <p class="text-xs text-gray-500">{{ $feature->status->label() }} · ${{ number_format((float)$feature->total_cost, 0, ',', '.') }}</p>
                     </div>
-                    <p class="text-xs text-gray-400">{{ $payment->reference ?: '—' }}</p>
+                    <a href="{{ route('features.show', $feature) }}" class="text-gray-400 hover:text-primary">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                    </a>
                 </div>
             @empty
-                <div class="px-6 py-6 text-center text-gray-400">Sin pagos registrados.</div>
+                <div class="px-6 py-6 text-center text-gray-400">Sin mejoras asociadas a esta licencia.</div>
             @endforelse
         </div>
     </div>

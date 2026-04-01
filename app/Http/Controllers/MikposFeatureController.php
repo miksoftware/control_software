@@ -7,17 +7,12 @@ namespace App\Http\Controllers;
 use App\Enums\ProjectStatus;
 use App\Http\Requests\StoreMikposFeatureRequest;
 use App\Models\MikposFeature;
-use App\Services\PaymentService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 class MikposFeatureController extends Controller
 {
-    public function __construct(
-        private readonly PaymentService $paymentService,
-    ) {}
-
     /**
      * Listar mejoras/cambios con filtros opcionales.
      */
@@ -25,22 +20,18 @@ class MikposFeatureController extends Controller
     {
         $query = MikposFeature::with('client');
 
-        // Filtro por cliente
         if ($request->filled('client_id')) {
             $query->where('client_id', $request->integer('client_id'));
         }
 
-        // Filtro por licencia
         if ($request->filled('mikpos_license_id')) {
             $query->where('mikpos_license_id', $request->integer('mikpos_license_id'));
         }
 
-        // Filtro por estado
         if ($request->filled('status')) {
             $query->withStatus(ProjectStatus::from($request->input('status')));
         }
 
-        // Solo con saldo pendiente
         if ($request->boolean('with_balance')) {
             $query->withOutstandingBalance();
         }
@@ -71,24 +62,15 @@ class MikposFeatureController extends Controller
     }
 
     /**
-     * Mostrar una mejora específica con pagos e información financiera.
+     * Mostrar una mejora específica.
      */
     public function show(MikposFeature $feature): JsonResponse
     {
-        $feature->load(['client', 'mikposLicense', 'payments']);
-
-        // Agregar atributos calculados
-        $feature->append([
-            'total_paid',
-            'outstanding_balance',
-            'payment_progress',
-            'is_fully_paid',
-        ]);
+        $feature->load(['client', 'mikposLicense']);
 
         return response()->json([
-            'success'           => true,
-            'data'              => $feature,
-            'financial_summary' => $this->paymentService->getFinancialSummary($feature),
+            'success' => true,
+            'data'    => $feature,
         ]);
     }
 
@@ -106,27 +88,12 @@ class MikposFeatureController extends Controller
             'completed_at'          => ['nullable', 'date'],
         ]);
 
-        // Si se marca como completado, registrar fecha
         if (
             isset($validated['status']) &&
             $validated['status'] === ProjectStatus::Completed->value &&
             empty($validated['completed_at'])
         ) {
             $validated['completed_at'] = now()->toDateString();
-        }
-
-        // Validar que el nuevo total_cost no sea menor a lo ya pagado
-        if (isset($validated['total_cost'])) {
-            $totalPaid = $feature->total_paid;
-            if ((float) $validated['total_cost'] < $totalPaid) {
-                return response()->json([
-                    'success' => false,
-                    'message' => sprintf(
-                        'El costo total no puede ser menor a lo ya pagado ($%s).',
-                        number_format($totalPaid, 2)
-                    ),
-                ], Response::HTTP_UNPROCESSABLE_ENTITY);
-            }
         }
 
         $feature->update($validated);
@@ -143,14 +110,6 @@ class MikposFeatureController extends Controller
      */
     public function destroy(MikposFeature $feature): JsonResponse
     {
-        // Verificar que no tenga pagos registrados
-        if ($feature->payments()->exists()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'No se puede eliminar una mejora que tiene pagos registrados. Considere cancelarla.',
-            ], Response::HTTP_CONFLICT);
-        }
-
         $feature->delete();
 
         return response()->json([

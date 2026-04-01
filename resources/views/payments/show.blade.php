@@ -25,28 +25,18 @@
                     <dd class="text-sm font-medium text-gray-800">{{ $payment->reference ?: '—' }}</dd>
                 </div>
                 <div class="flex justify-between pt-3">
-                    <dt class="text-sm text-gray-500">Entidad</dt>
+                    <dt class="text-sm text-gray-500">Cliente</dt>
                     <dd class="text-sm font-medium">
-                        @if($payment->payable)
-                            @php
-                                $typeName = match(class_basename($payment->payable_type)) {
-                                    'MikposLicense' => 'Licencia',
-                                    'MikposFeature' => 'Mejora',
-                                    'CustomProject' => 'Proyecto',
-                                    default => 'N/A',
-                                };
-                                $route = match(class_basename($payment->payable_type)) {
-                                    'MikposLicense' => route('licenses.show', $payment->payable_id),
-                                    'MikposFeature' => route('features.show', $payment->payable_id),
-                                    'CustomProject' => route('projects.show', $payment->payable_id),
-                                    default => '#',
-                                };
-                            @endphp
-                            <a href="{{ $route }}" class="text-indigo-600 hover:text-indigo-800">{{ $typeName }} #{{ $payment->payable_id }}</a>
+                        @if($payment->client)
+                            <a href="{{ route('clients.show', $payment->client) }}" class="text-indigo-600 hover:text-indigo-800">{{ $payment->client->name }}</a>
                         @else
                             <span class="text-gray-400">—</span>
                         @endif
                     </dd>
+                </div>
+                <div class="flex justify-between pt-3">
+                    <dt class="text-sm text-gray-500">Categoría</dt>
+                    <dd class="text-sm font-medium text-gray-800">{{ ucfirst($payment->category) }}</dd>
                 </div>
                 @if($payment->notes)
                 <div class="flex justify-between pt-3">

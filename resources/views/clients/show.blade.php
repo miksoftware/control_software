@@ -108,8 +108,8 @@
                     <table class="w-full text-left">
                         <thead class="bg-gray-50 border-b border-gray-100">
                             <tr>
-                                <th class="px-6 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Plan / Ciclo</th>
-                                <th class="px-6 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Vencimiento</th>
+                                <th class="px-6 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Licencia / Ciclo</th>
+                                <th class="px-6 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Próx. Facturación</th>
                                 <th class="px-6 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider text-right">Estado</th>
                             </tr>
                         </thead>
@@ -117,15 +117,15 @@
                             @forelse($client->mikposLicenses as $license)
                                 <tr>
                                     <td class="px-6 py-4">
-                                        <div class="text-sm font-bold text-gray-800">{{ $license->license_type ?? 'Estándar' }}</div>
-                                        <div class="text-xs text-gray-500 uppercase">{{ $license->cycle_type ?? 'Mensual' }}</div>
+                                        <div class="text-sm font-bold text-gray-800">{{ $license->license_key }}</div>
+                                        <div class="text-xs text-gray-500 uppercase">{{ $license->billing_cycle->label() }}</div>
                                     </td>
                                     <td class="px-6 py-4 text-sm text-gray-600">
-                                        {{ $license->expires_at ? $license->expires_at->format('d/m/Y') : 'N/A' }}
+                                        {{ $license->next_billing_at ? $license->next_billing_at->format('d/m/Y') : 'N/A' }}
                                     </td>
                                     <td class="px-6 py-4 text-right">
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold {{ $license->status === 'active' ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-100 text-gray-800' }} uppercase">
-                                            {{ $license->status === 'active' ? 'Activa' : 'Inactiva' }}
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold {{ $license->status === App\Enums\LicenseStatus::Active ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-100 text-gray-800' }} uppercase">
+                                            {{ $license->status->label() }}
                                         </span>
                                     </td>
                                 </tr>
@@ -151,11 +151,11 @@
                                 </div>
                                 <div>
                                     <h4 class="text-sm font-bold text-gray-900">{{ $project->name }}</h4>
-                                    <p class="text-xs text-gray-500">Proyecto a Medida • {{ $project->status_label ?? 'En Proceso' }}</p>
+                                    <p class="text-xs text-gray-500">Proyecto a Medida • {{ $project->status->label() }}</p>
                                 </div>
                             </div>
                             <div class="text-right">
-                                <p class="text-sm font-bold text-gray-900">${{ number_format($project->total_value, 2) }}</p>
+                                <p class="text-sm font-bold text-gray-900">${{ number_format($project->contract_value, 2) }}</p>
                                 <a href="{{ route('projects.show', $project) }}" class="text-[10px] text-accent font-bold uppercase hover:underline">Ver detalles</a>
                             </div>
                         </div>
@@ -168,12 +168,12 @@
                                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
                                 </div>
                                 <div>
-                                    <h4 class="text-sm font-bold text-gray-900">{{ $feature->name }}</h4>
-                                    <p class="text-xs text-gray-500">Mejora MikPoS • {{ $feature->status_label ?? 'Completada' }}</p>
+                                    <h4 class="text-sm font-bold text-gray-900">{{ $feature->title }}</h4>
+                                    <p class="text-xs text-gray-500">Mejora MikPoS • {{ $feature->status->label() }}</p>
                                 </div>
                             </div>
                             <div class="text-right">
-                                <p class="text-sm font-bold text-gray-900">${{ number_format($feature->total_value, 2) }}</p>
+                                <p class="text-sm font-bold text-gray-900">${{ number_format($feature->total_cost, 2) }}</p>
                                 <a href="{{ route('features.show', $feature) }}" class="text-[10px] text-accent font-bold uppercase hover:underline">Ver detalles</a>
                             </div>
                         </div>
