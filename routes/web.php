@@ -21,6 +21,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
 
     // Clientes
+    Route::get('clients/{client}/report', [ClientWebController::class, 'report'])->name('clients.report');
     Route::get('clients/{client}/statement', [ClientWebController::class, 'statement'])->name('clients.statement');
     Route::resource('clients', ClientWebController::class);
 

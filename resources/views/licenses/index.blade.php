@@ -96,7 +96,8 @@
                                 <a href="{{ route('licenses.show', $license) }}" class="text-gray-400 hover:text-primary transition-colors">
                                     <svg class="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                                 </a>
-                                <a href="{{ route('licenses.edit', $license) }}" class="text-gray-400 hover:text-accent transition-colors">
+                                <a href="{{ route('licenses.edit', $license) }}" class="text-gray-400 hover:text-accent transition-colors"
+                                   onclick="event.preventDefault(); openEditLicense({{ json_encode(['id' => $license->id, 'site_url' => $license->site_url, 'status' => $license->status->value, 'billing_cycle' => $license->billing_cycle->value ?? $license->billing_cycle, 'monthly_rate' => $license->monthly_rate, 'next_billing_at' => $license->next_billing_at?->format('Y-m-d'), 'client_name' => $license->client->name, 'license_key' => $license->license_key]) }})">
                                     <svg class="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                                 </a>
                             </td>
@@ -184,4 +185,79 @@
     @if($errors->any())
     <script>document.addEventListener('DOMContentLoaded', () => document.getElementById('createLicenseModal').classList.remove('hidden'));</script>
     @endif
+
+    <!-- Modal: Editar Licencia -->
+    <div id="editLicenseModal" class="hidden fixed inset-0 z-50 overflow-y-auto" aria-modal="true">
+        <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
+            <div class="fixed inset-0 bg-gray-500/75 transition-opacity" onclick="document.getElementById('editLicenseModal').classList.add('hidden')"></div>
+            <div class="relative bg-white rounded-2xl shadow-xl transform transition-all sm:max-w-lg sm:w-full mx-auto">
+                <form id="editLicenseForm" method="POST" action="">
+                    @csrf
+                    @method('PUT')
+                    <div class="px-8 py-6 border-b border-gray-100">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h3 class="text-xl font-bold text-gray-900">Editar Licencia</h3>
+                                <p class="text-sm text-gray-500 mt-1" id="editLicenseSubtitle"></p>
+                            </div>
+                            <button type="button" onclick="document.getElementById('editLicenseModal').classList.add('hidden')" class="text-gray-400 hover:text-gray-600">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="px-8 py-6 space-y-5">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">URL del Sitio Web</label>
+                            <input type="url" name="site_url" id="editLicenseSiteUrl" placeholder="https://ejemplo.com" class="w-full rounded-xl border-gray-300 bg-gray-50 focus:border-accent focus:ring-accent sm:text-sm">
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Estado</label>
+                                <select name="status" id="editLicenseStatus" required class="w-full rounded-xl border-gray-300 bg-gray-50 focus:border-accent focus:ring-accent sm:text-sm">
+                                    @foreach(\App\Enums\LicenseStatus::cases() as $status)
+                                        <option value="{{ $status->value }}">{{ $status->label() }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Ciclo de Facturación</label>
+                                <select name="billing_cycle" id="editLicenseCycle" required class="w-full rounded-xl border-gray-300 bg-gray-50 focus:border-accent focus:ring-accent sm:text-sm">
+                                    @foreach($billingCycles as $cycle)
+                                        <option value="{{ $cycle->value }}">{{ $cycle->label() }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Tarifa Mensual ($)</label>
+                                <input type="number" step="0.01" name="monthly_rate" id="editLicenseRate" required class="w-full rounded-xl border-gray-300 bg-gray-50 focus:border-accent focus:ring-accent sm:text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Próxima Facturación</label>
+                                <input type="date" name="next_billing_at" id="editLicenseBilling" class="w-full rounded-xl border-gray-300 bg-gray-50 focus:border-accent focus:ring-accent sm:text-sm">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="px-8 py-4 bg-gray-50 border-t border-gray-100 flex items-center justify-end space-x-3 rounded-b-2xl">
+                        <button type="button" onclick="document.getElementById('editLicenseModal').classList.add('hidden')" class="px-4 py-2 text-sm font-bold text-gray-500 hover:text-gray-700">Cancelar</button>
+                        <button type="submit" class="px-6 py-2 bg-accent text-white text-sm font-bold rounded-xl hover:bg-accent/90 transition-colors shadow-sm shadow-accent/20">Guardar Cambios</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    function openEditLicense(l) {
+        document.getElementById('editLicenseForm').action = '/licenses/' + l.id;
+        document.getElementById('editLicenseSubtitle').textContent = l.client_name + ' — ' + (l.license_key || '');
+        document.getElementById('editLicenseSiteUrl').value = l.site_url || '';
+        document.getElementById('editLicenseStatus').value = l.status || '';
+        document.getElementById('editLicenseCycle').value = l.billing_cycle || '';
+        document.getElementById('editLicenseRate').value = l.monthly_rate || '';
+        document.getElementById('editLicenseBilling').value = l.next_billing_at || '';
+        document.getElementById('editLicenseModal').classList.remove('hidden');
+    }
+    </script>
 </x-app-layout>

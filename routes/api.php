@@ -28,6 +28,7 @@ Route::get('/user', function (Request $request) {
 Route::prefix('v1')->as('api.v1.')->group(function () {
 
     // Clientes
+    Route::get('clients/{client}/report', [ClientController::class, 'report'])->name('clients.report');
     Route::apiResource('clients', ClientController::class);
 
     // Licencias MikPoS

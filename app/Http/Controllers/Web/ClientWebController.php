@@ -9,12 +9,17 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreClientRequest;
 use App\Http\Requests\UpdateClientRequest;
 use App\Models\Client;
+use App\Services\ClientReportService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class ClientWebController extends Controller
 {
+    public function __construct(
+        private readonly ClientReportService $clientReportService,
+    ) {}
+
     public function index(Request $request): View
     {
         $query = Client::query();
@@ -32,7 +37,9 @@ class ClientWebController extends Controller
             ->paginate(15)
             ->withQueryString();
 
-        return view('clients.index', compact('clients'));
+        $clientTypes = ClientType::cases();
+
+        return view('clients.index', compact('clients', 'clientTypes'));
     }
 
     public function create(): View
@@ -72,6 +79,18 @@ class ClientWebController extends Controller
         ]);
 
         return view('clients.statement', compact('client'));
+    }
+
+    public function report(Client $client): View|RedirectResponse
+    {
+        if ($client->trashed()) {
+            return redirect()->route('clients.index')
+                ->with('error', 'El cliente solicitado no existe o fue eliminado.');
+        }
+
+        $reportData = $this->clientReportService->generateReport($client);
+
+        return view('clients.report', $reportData);
     }
 
     public function edit(Client $client): View

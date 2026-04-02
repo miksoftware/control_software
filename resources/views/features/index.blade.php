@@ -43,7 +43,8 @@
                                 <a href="{{ route('features.show', $feature) }}" class="text-gray-400 hover:text-primary transition-colors">
                                     <svg class="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                                 </a>
-                                <a href="{{ route('features.edit', $feature) }}" class="text-gray-400 hover:text-accent transition-colors">
+                                <a href="{{ route('features.edit', $feature) }}" class="text-gray-400 hover:text-accent transition-colors"
+                                   onclick="event.preventDefault(); openEditFeature({{ json_encode(['id' => $feature->id, 'title' => $feature->title, 'description' => $feature->description, 'total_cost' => $feature->total_cost, 'status' => $feature->status->value, 'estimated_delivery_at' => $feature->estimated_delivery_at?->format('Y-m-d')]) }})">
                                     <svg class="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                                 </a>
                             </td>
@@ -64,4 +65,69 @@
             </div>
         @endif
     </div>
+
+    <!-- Modal: Editar Mejora -->
+    <div id="editFeatureModal" class="hidden fixed inset-0 z-50 overflow-y-auto" aria-modal="true">
+        <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
+            <div class="fixed inset-0 bg-gray-500/75 transition-opacity" onclick="document.getElementById('editFeatureModal').classList.add('hidden')"></div>
+            <div class="relative bg-white rounded-2xl shadow-xl transform transition-all sm:max-w-lg sm:w-full mx-auto">
+                <form id="editFeatureForm" method="POST" action="">
+                    @csrf
+                    @method('PUT')
+                    <div class="px-8 py-6 border-b border-gray-100">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-xl font-bold text-gray-900">Editar Mejora</h3>
+                            <button type="button" onclick="document.getElementById('editFeatureModal').classList.add('hidden')" class="text-gray-400 hover:text-gray-600">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="px-8 py-6 space-y-5">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Título *</label>
+                            <input type="text" name="title" id="editFeatureTitle" required class="w-full rounded-xl border-gray-300 bg-gray-50 focus:border-accent focus:ring-accent sm:text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
+                            <textarea name="description" id="editFeatureDescription" rows="3" class="w-full rounded-xl border-gray-300 bg-gray-50 focus:border-accent focus:ring-accent sm:text-sm"></textarea>
+                        </div>
+                        <div class="grid grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Costo Total</label>
+                                <input type="number" name="total_cost" id="editFeatureCost" step="0.01" min="0" class="w-full rounded-xl border-gray-300 bg-gray-50 focus:border-accent focus:ring-accent sm:text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Estado</label>
+                                <select name="status" id="editFeatureStatus" class="w-full rounded-xl border-gray-300 bg-gray-50 focus:border-accent focus:ring-accent sm:text-sm">
+                                    @foreach($statuses as $status)
+                                        <option value="{{ $status->value }}">{{ $status->label() }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Entrega Est.</label>
+                                <input type="date" name="estimated_delivery_at" id="editFeatureDelivery" class="w-full rounded-xl border-gray-300 bg-gray-50 focus:border-accent focus:ring-accent sm:text-sm">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="px-8 py-4 bg-gray-50 border-t border-gray-100 flex items-center justify-end space-x-3 rounded-b-2xl">
+                        <button type="button" onclick="document.getElementById('editFeatureModal').classList.add('hidden')" class="px-4 py-2 text-sm font-bold text-gray-500 hover:text-gray-700">Cancelar</button>
+                        <button type="submit" class="px-6 py-2 bg-accent text-white text-sm font-bold rounded-xl hover:bg-accent/90 transition-colors shadow-sm shadow-accent/20">Actualizar Mejora</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    function openEditFeature(f) {
+        document.getElementById('editFeatureForm').action = '/features/' + f.id;
+        document.getElementById('editFeatureTitle').value = f.title || '';
+        document.getElementById('editFeatureDescription').value = f.description || '';
+        document.getElementById('editFeatureCost').value = f.total_cost || '';
+        document.getElementById('editFeatureStatus').value = f.status || '';
+        document.getElementById('editFeatureDelivery').value = f.estimated_delivery_at || '';
+        document.getElementById('editFeatureModal').classList.remove('hidden');
+    }
+    </script>
 </x-app-layout>

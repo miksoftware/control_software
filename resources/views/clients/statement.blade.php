@@ -9,6 +9,9 @@
             <p class="text-gray-500 mt-1">Resumen financiero detallado para <strong>{{ $client->name }}</strong>.</p>
         </div>
         <div class="mt-4 md:mt-0 flex space-x-3">
+            <a href="{{ route('clients.report', $client) }}" class="inline-flex items-center px-4 py-2 bg-primary text-white rounded-xl font-bold hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition ease-in-out duration-150 shadow-sm">
+                Ver Reporte Completo
+            </a>
             <a href="{{ route('payments.create', ['client_id' => $client->id]) }}" class="inline-flex items-center px-4 py-2 bg-accent border border-transparent rounded-xl font-bold text-white hover:bg-accent/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent transition ease-in-out duration-150 shadow-sm shadow-accent/20">
                 Registrar Abono
             </a>

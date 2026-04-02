@@ -7,12 +7,16 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreClientRequest;
 use App\Http\Requests\UpdateClientRequest;
 use App\Models\Client;
+use App\Services\ClientReportService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 class ClientController extends Controller
 {
+    public function __construct(
+        private readonly ClientReportService $clientReportService,
+    ) {}
     /**
      * Listar todos los clientes con filtros opcionales.
      */
@@ -93,6 +97,20 @@ class ClientController extends Controller
             'success' => true,
             'message' => 'Cliente actualizado exitosamente.',
             'data'    => $client->fresh(),
+        ]);
+    }
+
+    /**
+     * Generar reporte detallado de un cliente.
+     */
+    public function report(Client $client): JsonResponse
+    {
+        $reportData = $this->clientReportService->generateReport($client);
+
+        return response()->json([
+            'success' => true,
+            'data'    => $reportData,
+            'message' => 'Reporte generado exitosamente.',
         ]);
     }
 

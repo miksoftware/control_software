@@ -36,7 +36,9 @@ class FeatureWebController extends Controller
             ->paginate(15)
             ->withQueryString();
 
-        return view('features.index', compact('features'));
+        $statuses = ProjectStatus::cases();
+
+        return view('features.index', compact('features', 'statuses'));
     }
 
     public function create(): View

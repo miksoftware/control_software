@@ -43,7 +43,8 @@
                                 <a href="{{ route('projects.show', $project) }}" class="text-gray-400 hover:text-primary transition-colors">
                                     <svg class="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                                 </a>
-                                <a href="{{ route('projects.edit', $project) }}" class="text-gray-400 hover:text-accent transition-colors">
+                                <a href="{{ route('projects.edit', $project) }}" class="text-gray-400 hover:text-accent transition-colors"
+                                   onclick="event.preventDefault(); openEditProject({{ json_encode(['id' => $project->id, 'name' => $project->name, 'description' => $project->description, 'contract_value' => $project->contract_value, 'status' => $project->status->value, 'start_date' => $project->start_date?->format('Y-m-d'), 'estimated_end_date' => $project->estimated_end_date?->format('Y-m-d'), 'actual_end_date' => $project->actual_end_date?->format('Y-m-d')]) }})">
                                     <svg class="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                                 </a>
                             </td>
@@ -125,4 +126,81 @@
     @if($errors->any())
     <script>document.addEventListener('DOMContentLoaded', () => document.getElementById('createProjectModal').classList.remove('hidden'));</script>
     @endif
+
+    <!-- Modal: Editar Proyecto -->
+    <div id="editProjectModal" class="hidden fixed inset-0 z-50 overflow-y-auto" aria-modal="true">
+        <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
+            <div class="fixed inset-0 bg-gray-500/75 transition-opacity" onclick="document.getElementById('editProjectModal').classList.add('hidden')"></div>
+            <div class="relative bg-white rounded-2xl shadow-xl transform transition-all sm:max-w-lg sm:w-full mx-auto">
+                <form id="editProjectForm" method="POST" action="">
+                    @csrf
+                    @method('PUT')
+                    <div class="px-8 py-6 border-b border-gray-100">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-xl font-bold text-gray-900">Editar Proyecto</h3>
+                            <button type="button" onclick="document.getElementById('editProjectModal').classList.add('hidden')" class="text-gray-400 hover:text-gray-600">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="px-8 py-6 space-y-5">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Nombre *</label>
+                            <input type="text" name="name" id="editProjectName" required class="w-full rounded-xl border-gray-300 bg-gray-50 focus:border-accent focus:ring-accent sm:text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
+                            <textarea name="description" id="editProjectDescription" rows="3" class="w-full rounded-xl border-gray-300 bg-gray-50 focus:border-accent focus:ring-accent sm:text-sm"></textarea>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Valor del Contrato</label>
+                                <input type="number" name="contract_value" id="editProjectValue" step="0.01" min="0" class="w-full rounded-xl border-gray-300 bg-gray-50 focus:border-accent focus:ring-accent sm:text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Estado</label>
+                                <select name="status" id="editProjectStatus" class="w-full rounded-xl border-gray-300 bg-gray-50 focus:border-accent focus:ring-accent sm:text-sm">
+                                    @foreach($statuses as $status)
+                                        <option value="{{ $status->value }}">{{ $status->label() }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Fecha Inicio</label>
+                                <input type="date" name="start_date" id="editProjectStart" class="w-full rounded-xl border-gray-300 bg-gray-50 focus:border-accent focus:ring-accent sm:text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Fin Estimado</label>
+                                <input type="date" name="estimated_end_date" id="editProjectEstEnd" class="w-full rounded-xl border-gray-300 bg-gray-50 focus:border-accent focus:ring-accent sm:text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Fin Real</label>
+                                <input type="date" name="actual_end_date" id="editProjectActEnd" class="w-full rounded-xl border-gray-300 bg-gray-50 focus:border-accent focus:ring-accent sm:text-sm">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="px-8 py-4 bg-gray-50 border-t border-gray-100 flex items-center justify-end space-x-3 rounded-b-2xl">
+                        <button type="button" onclick="document.getElementById('editProjectModal').classList.add('hidden')" class="px-4 py-2 text-sm font-bold text-gray-500 hover:text-gray-700">Cancelar</button>
+                        <button type="submit" class="px-6 py-2 bg-accent text-white text-sm font-bold rounded-xl hover:bg-accent/90 transition-colors shadow-sm shadow-accent/20">Actualizar Proyecto</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    function openEditProject(p) {
+        document.getElementById('editProjectForm').action = '/projects/' + p.id;
+        document.getElementById('editProjectName').value = p.name || '';
+        document.getElementById('editProjectDescription').value = p.description || '';
+        document.getElementById('editProjectValue').value = p.contract_value || '';
+        document.getElementById('editProjectStatus').value = p.status || '';
+        document.getElementById('editProjectStart').value = p.start_date || '';
+        document.getElementById('editProjectEstEnd').value = p.estimated_end_date || '';
+        document.getElementById('editProjectActEnd').value = p.actual_end_date || '';
+        document.getElementById('editProjectModal').classList.remove('hidden');
+    }
+    </script>
 </x-app-layout>
