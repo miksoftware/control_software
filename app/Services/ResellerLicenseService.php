@@ -92,9 +92,17 @@ final class ResellerLicenseService
             ->where('is_free_promotion', false)
             ->count();
 
+        // Contar licencias GRATUITAS ya otorgadas
+        $freeCount = $client->mikposLicenses()
+            ->lockForUpdate()
+            ->where('is_free_promotion', true)
+            ->count();
+
+        // Por cada 4 pagadas se gana 1 gratuita
         // La 5ta, 10ma, 15va, etc. serán gratuitas
-        // Esto ocurre cuando el conteo de pagadas es múltiplo de 4 y mayor que 0
-        return $paidCount > 0 && $paidCount % self::PAID_LICENSES_FOR_FREE === 0;
+        $earnedFree = intdiv($paidCount, self::PAID_LICENSES_FOR_FREE);
+
+        return $earnedFree > 0 && $freeCount < $earnedFree;
     }
 
     /**
@@ -121,18 +129,23 @@ final class ResellerLicenseService
 
         $totalCount = $paidCount + $freeCount;
 
-        // Calcular cuántas licencias pagadas faltan para la próxima gratuita
-        $remainingForFree = self::PAID_LICENSES_FOR_FREE - ($paidCount % self::PAID_LICENSES_FOR_FREE);
+        // Por cada 4 pagadas se gana 1 gratuita
+        $earnedFree = intdiv($paidCount, self::PAID_LICENSES_FOR_FREE);
 
-        // Si el remainder es 4 y tenemos al menos 4 pagadas, la siguiente es gratis
-        $nextIsFree = $paidCount > 0 && $paidCount % self::PAID_LICENSES_FOR_FREE === 0;
+        // La siguiente es gratis si hay gratuitas ganadas pendientes de otorgar
+        $nextIsFree = $earnedFree > 0 && $freeCount < $earnedFree;
+
+        // Calcular cuántas licencias pagadas faltan para la próxima gratuita
+        $remainingForFree = $nextIsFree
+            ? 0
+            : self::PAID_LICENSES_FOR_FREE - ($paidCount % self::PAID_LICENSES_FOR_FREE);
 
         return [
             'total_licenses'            => $totalCount,
             'paid_licenses'             => $paidCount,
             'free_licenses'             => $freeCount,
             'next_license_is_free'      => $nextIsFree,
-            'remaining_for_next_free'   => $nextIsFree ? 0 : $remainingForFree,
+            'remaining_for_next_free'   => $remainingForFree,
         ];
     }
 }

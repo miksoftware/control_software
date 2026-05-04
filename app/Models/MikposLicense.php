@@ -28,6 +28,8 @@ class MikposLicense extends Model
         'client_id',
         'license_key',
         'site_url',
+        'system_token',
+        'system_enabled',
         'billing_cycle',
         'monthly_rate',
         'installation_fee',
@@ -50,6 +52,8 @@ class MikposLicense extends Model
             'monthly_rate'      => 'decimal:2',
             'installation_fee'  => 'decimal:2',
             'is_free_promotion' => 'boolean',
+            'system_token'      => 'encrypted',
+            'system_enabled'    => 'boolean',
             'activated_at'      => 'date',
             'next_billing_at'   => 'date',
         ];

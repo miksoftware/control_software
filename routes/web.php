@@ -22,10 +22,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Clientes
     Route::get('clients/{client}/report', [ClientWebController::class, 'report'])->name('clients.report');
+    Route::get('clients/{client}/report/export', [ClientWebController::class, 'exportExcel'])->name('clients.report.export');
     Route::get('clients/{client}/statement', [ClientWebController::class, 'statement'])->name('clients.statement');
     Route::resource('clients', ClientWebController::class);
 
     // Licencias MikPoS
+    Route::post('licenses/{license}/toggle-system', [LicenseWebController::class, 'toggleSystem'])->name('licenses.toggle-system');
     Route::resource('licenses', LicenseWebController::class);
 
     // Mejoras / Cambios MikPoS
@@ -35,7 +37,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('projects', ProjectWebController::class);
 
     // Pagos / Abonos
-    Route::resource('payments', PaymentWebController::class)->except(['edit', 'update']);
+    Route::resource('payments', PaymentWebController::class);
 
     // Perfil
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

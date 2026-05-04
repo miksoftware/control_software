@@ -5,10 +5,10 @@
             <p class="text-gray-500 mt-1">Nuevas funcionalidades y cambios solicitados para el software base.</p>
         </div>
         <div class="mt-4 md:mt-0">
-            <a href="{{ route('features.create') }}" class="inline-flex items-center px-4 py-2 bg-accent border border-transparent rounded-xl font-bold text-white hover:bg-accent/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent transition ease-in-out duration-150 shadow-sm shadow-accent/20">
+            <button onclick="document.getElementById('createFeatureModal').classList.remove('hidden')" class="inline-flex items-center px-4 py-2 bg-accent border border-transparent rounded-xl font-bold text-white hover:bg-accent/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent transition ease-in-out duration-150 shadow-sm shadow-accent/20">
                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
                 Nueva Mejora
-            </a>
+            </button>
         </div>
     </div>
 
@@ -65,6 +65,74 @@
             </div>
         @endif
     </div>
+
+    <!-- Modal: Nueva Mejora -->
+    <div id="createFeatureModal" class="hidden fixed inset-0 z-50 overflow-y-auto" aria-modal="true">
+        <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
+            <div class="fixed inset-0 bg-gray-500/75 transition-opacity" onclick="document.getElementById('createFeatureModal').classList.add('hidden')"></div>
+            <div class="relative bg-white rounded-2xl shadow-xl transform transition-all sm:max-w-2xl sm:w-full mx-auto">
+                <form method="POST" action="{{ route('features.store') }}">
+                    @csrf
+                    <div class="px-8 py-6 border-b border-gray-100">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-xl font-bold text-gray-900">Nueva Mejora / Cambio</h3>
+                            <button type="button" onclick="document.getElementById('createFeatureModal').classList.add('hidden')" class="text-gray-400 hover:text-gray-600">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="px-8 py-6 space-y-5">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Cliente *</label>
+                                <select name="client_id" required class="w-full rounded-xl border-gray-300 bg-gray-50 focus:border-accent focus:ring-accent sm:text-sm">
+                                    <option value="">Seleccionar...</option>
+                                    @foreach($clients as $client)
+                                        <option value="{{ $client->id }}">{{ $client->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Licencia MikPoS (opcional)</label>
+                                <select name="mikpos_license_id" class="w-full rounded-xl border-gray-300 bg-gray-50 focus:border-accent focus:ring-accent sm:text-sm">
+                                    <option value="">Ninguna</option>
+                                    @foreach($licenses as $license)
+                                        <option value="{{ $license->id }}">{{ $license->license_key }} — {{ $license->client->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Título *</label>
+                            <input type="text" name="title" required placeholder="Ej: Módulo de inventario avanzado" class="w-full rounded-xl border-gray-300 bg-gray-50 focus:border-accent focus:ring-accent sm:text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
+                            <textarea name="description" rows="3" placeholder="Detalla los cambios o mejoras solicitadas..." class="w-full rounded-xl border-gray-300 bg-gray-50 focus:border-accent focus:ring-accent sm:text-sm"></textarea>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Costo Total *</label>
+                                <input type="number" name="total_cost" step="0.01" min="0" required class="w-full rounded-xl border-gray-300 bg-gray-50 focus:border-accent focus:ring-accent sm:text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Entrega Estimada</label>
+                                <input type="date" name="estimated_delivery_at" class="w-full rounded-xl border-gray-300 bg-gray-50 focus:border-accent focus:ring-accent sm:text-sm">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="px-8 py-4 bg-gray-50 border-t border-gray-100 flex items-center justify-end space-x-3 rounded-b-2xl">
+                        <button type="button" onclick="document.getElementById('createFeatureModal').classList.add('hidden')" class="px-4 py-2 text-sm font-bold text-gray-500 hover:text-gray-700">Cancelar</button>
+                        <button type="submit" class="px-6 py-2 bg-accent text-white text-sm font-bold rounded-xl hover:bg-accent/90 transition-colors shadow-sm shadow-accent/20">Crear Mejora</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    @if($errors->any())
+    <script>document.addEventListener('DOMContentLoaded', () => document.getElementById('createFeatureModal').classList.remove('hidden'));</script>
+    @endif
 
     <!-- Modal: Editar Mejora -->
     <div id="editFeatureModal" class="hidden fixed inset-0 z-50 overflow-y-auto" aria-modal="true">

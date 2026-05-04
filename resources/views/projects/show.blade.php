@@ -109,6 +109,7 @@
                             <th class="px-8 py-3 font-bold text-gray-400 uppercase text-[10px]">Referencia</th>
                             <th class="px-8 py-3 font-bold text-gray-400 uppercase text-[10px]">Método</th>
                             <th class="px-8 py-3 font-bold text-gray-400 uppercase text-[10px] text-right">Monto</th>
+                            <th class="px-8 py-3 font-bold text-gray-400 uppercase text-[10px] text-right">Acciones</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-50">
@@ -122,10 +123,25 @@
                                     <div class="text-[10px] text-gray-400 uppercase">{{ $payment->payment_method->label() }}</div>
                                 </td>
                                 <td class="px-8 py-4 text-right font-bold text-emerald-600">${{ number_format($payment->amount, 2) }}</td>
+                                <td class="px-8 py-4 text-right">
+                                    <div class="flex items-center justify-end space-x-2">
+                                        <button onclick="openEditPaymentModal({{ $payment->id }}, '{{ $payment->amount }}', '{{ $payment->payment_method->value }}', '{{ $payment->paid_at->format('Y-m-d') }}', '{{ addslashes($payment->reference ?? '') }}', '{{ addslashes($payment->notes ?? '') }}')" class="text-gray-400 hover:text-accent transition-colors" title="Editar pago">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                                        </button>
+                                        <form method="POST" action="{{ route('payments.destroy', $payment) }}" onsubmit="return confirm('¿Estás seguro de eliminar este pago de ${{ number_format($payment->amount, 2) }}?')" class="inline">
+                                            @csrf
+                                            @method('DELETE')
+                                            <input type="hidden" name="redirect_to" value="{{ route('projects.show', $project) }}">
+                                            <button type="submit" class="text-gray-400 hover:text-red-500 transition-colors" title="Eliminar pago">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="4" class="px-8 py-12 text-center text-gray-400 italic">No hay pagos registrados para este proyecto.</td>
+                                <td colspan="5" class="px-8 py-12 text-center text-gray-400 italic">No hay pagos registrados para este proyecto.</td>
                             </tr>
                         @endforelse
                     </tbody>
@@ -236,6 +252,73 @@
         document.getElementById('projectPaymentModal').classList.remove('hidden');
     });</script>
     @endif
+
+    <!-- Modal: Editar Pago -->
+    <div id="editPaymentModal" class="hidden fixed inset-0 z-50 overflow-y-auto" aria-modal="true">
+        <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
+            <div class="fixed inset-0 bg-gray-500/75 transition-opacity" onclick="document.getElementById('editPaymentModal').classList.add('hidden')"></div>
+            <div class="relative bg-white rounded-2xl shadow-xl transform transition-all sm:max-w-lg sm:w-full mx-auto">
+                <form id="editPaymentForm" method="POST" action="">
+                    @csrf
+                    @method('PUT')
+                    <input type="hidden" name="redirect_to" value="{{ route('projects.show', $project) }}">
+                    <div class="px-8 py-6 border-b border-gray-100">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h3 class="text-xl font-bold text-gray-900">Editar Pago</h3>
+                                <p class="text-sm text-gray-500 mt-1">Proyecto: {{ $project->name }}</p>
+                            </div>
+                            <button type="button" onclick="document.getElementById('editPaymentModal').classList.add('hidden')" class="text-gray-400 hover:text-gray-600">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="px-8 py-6 space-y-5">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Monto del Abono ($) *</label>
+                            <input type="number" step="0.01" name="amount" id="editPaymentAmount" required min="0.01" placeholder="0.00" class="w-full rounded-xl border-gray-300 bg-gray-50 focus:border-accent focus:ring-accent sm:text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Método de Pago *</label>
+                            <select name="payment_method" id="editPaymentMethod" required class="w-full rounded-xl border-gray-300 bg-gray-50 focus:border-accent focus:ring-accent sm:text-sm">
+                                @foreach(\App\Enums\PaymentMethod::cases() as $method)
+                                    <option value="{{ $method->value }}">{{ $method->label() }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Fecha del Pago *</label>
+                            <input type="date" name="paid_at" id="editPaymentDate" required class="w-full rounded-xl border-gray-300 bg-gray-50 focus:border-accent focus:ring-accent sm:text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Referencia / Comprobante</label>
+                            <input type="text" name="reference" id="editPaymentReference" placeholder="Ej: Transf. #12345" class="w-full rounded-xl border-gray-300 bg-gray-50 focus:border-accent focus:ring-accent sm:text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Notas</label>
+                            <textarea name="notes" id="editPaymentNotes" rows="2" class="w-full rounded-xl border-gray-300 bg-gray-50 focus:border-accent focus:ring-accent sm:text-sm"></textarea>
+                        </div>
+                    </div>
+                    <div class="px-8 py-4 bg-gray-50 border-t border-gray-100 flex items-center justify-end space-x-3 rounded-b-2xl">
+                        <button type="button" onclick="document.getElementById('editPaymentModal').classList.add('hidden')" class="px-4 py-2 text-sm font-bold text-gray-500 hover:text-gray-700">Cancelar</button>
+                        <button type="submit" class="px-6 py-2 bg-accent text-white text-sm font-bold rounded-xl hover:bg-accent/90 transition-colors shadow-sm shadow-accent/20">Actualizar Pago</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function openEditPaymentModal(paymentId, amount, method, date, reference, notes) {
+            document.getElementById('editPaymentForm').action = '/payments/' + paymentId;
+            document.getElementById('editPaymentAmount').value = amount;
+            document.getElementById('editPaymentMethod').value = method;
+            document.getElementById('editPaymentDate').value = date;
+            document.getElementById('editPaymentReference').value = reference;
+            document.getElementById('editPaymentNotes').value = notes;
+            document.getElementById('editPaymentModal').classList.remove('hidden');
+        }
+    </script>
 
     <!-- Modal: Editar Proyecto -->
     <div id="editProjectModal" class="hidden fixed inset-0 z-50 overflow-y-auto" aria-modal="true">

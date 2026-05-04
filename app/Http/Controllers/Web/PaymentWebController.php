@@ -97,10 +97,44 @@ class PaymentWebController extends Controller
         return view('payments.show', compact('payment'));
     }
 
+    public function edit(Payment $payment): View
+    {
+        $payment->load('client', 'customProject');
+        $paymentMethods = PaymentMethod::cases();
+
+        return view('payments.edit', compact('payment', 'paymentMethods'));
+    }
+
+    public function update(Request $request, Payment $payment): RedirectResponse
+    {
+        $validated = $request->validate([
+            'amount'            => ['required', 'numeric', 'min:0.01'],
+            'payment_method'    => ['required', 'string'],
+            'paid_at'           => ['required', 'date'],
+            'reference'         => ['nullable', 'string', 'max:100'],
+            'notes'             => ['nullable', 'string'],
+        ]);
+
+        $payment->update($validated);
+
+        $redirectTo = $request->input('redirect_to');
+        if ($redirectTo) {
+            return redirect($redirectTo)->with('success', 'Pago actualizado exitosamente.');
+        }
+
+        return redirect()->route('clients.show', $payment->client)
+            ->with('success', 'Pago actualizado exitosamente.');
+    }
+
     public function destroy(Payment $payment): RedirectResponse
     {
         $client = $payment->client;
+        $redirectTo = request()->input('redirect_to');
         $payment->delete();
+
+        if ($redirectTo) {
+            return redirect($redirectTo)->with('success', 'Registro de pago eliminado.');
+        }
 
         return redirect()->route('clients.show', $client)
             ->with('success', 'Registro de pago eliminado.');

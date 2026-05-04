@@ -17,7 +17,7 @@ class ProjectWebController extends Controller
 {
     public function index(Request $request): View
     {
-        $query = CustomProject::with('client');
+        $query = CustomProject::with(['client', 'payments']);
 
         if ($request->filled('client_id')) {
             $query->where('client_id', $request->integer('client_id'));
@@ -53,7 +53,7 @@ class ProjectWebController extends Controller
     {
         $project = CustomProject::create($request->validated());
 
-        return redirect()->route('projects.show', $project)
+        return redirect()->route('projects.index')
             ->with('success', 'Proyecto creado exitosamente.');
     }
 
@@ -91,7 +91,7 @@ class ProjectWebController extends Controller
 
         $project->update($validated);
 
-        return redirect()->route('projects.show', $project)
+        return redirect()->route('projects.index')
             ->with('success', 'Proyecto actualizado exitosamente.');
     }
 

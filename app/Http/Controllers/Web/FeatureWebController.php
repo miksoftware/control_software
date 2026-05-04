@@ -37,8 +37,10 @@ class FeatureWebController extends Controller
             ->withQueryString();
 
         $statuses = ProjectStatus::cases();
+        $clients  = Client::orderBy('name')->get();
+        $licenses = MikposLicense::with('client')->orderByDesc('created_at')->get();
 
-        return view('features.index', compact('features', 'statuses'));
+        return view('features.index', compact('features', 'statuses', 'clients', 'licenses'));
     }
 
     public function create(): View
@@ -54,7 +56,7 @@ class FeatureWebController extends Controller
     {
         $feature = MikposFeature::create($request->validated());
 
-        return redirect()->route('features.show', $feature)
+        return redirect()->route('features.index')
             ->with('success', 'Mejora/cambio registrado exitosamente.');
     }
 
@@ -92,7 +94,7 @@ class FeatureWebController extends Controller
 
         $feature->update($validated);
 
-        return redirect()->route('features.show', $feature)
+        return redirect()->route('features.index')
             ->with('success', 'Mejora/cambio actualizado exitosamente.');
     }
 
